@@ -8,6 +8,13 @@ in current local PC (nailbrainz-PC), restart the django container, and type
 root@nailbrainz-ROG-STRIX-Z390-F-GAMING:/ext/ssd2/codes/django_tutorial# source ../Django/djangoenv/bin/activate
 ```
 
+이후
+```
+python manage.py runserver
+``` 
+으로 실행
+
+************************************
 
 ### Tutorial 1 Serialization
 <a href="https://www.django-rest-framework.org/tutorial/1-serialization/" target="_blank">https://www.django-rest-framework.org/tutorial/1-serialization/<.a>
@@ -43,9 +50,54 @@ model과 serializer가 같은 필드에 대해 비슷한 선언 작업을 중복
 - 생성한 view는 snippet model을 여러 방식 (listing, read details) 으로 접근가능함
     - endpoint는 `snippets/urls.py`, `tutorial/urls.py`를 직접 만들어 내용을 채워넣어야 했음
 
+************************************
 
 ### VScode + container 포트 고갈 이슈
 - 컨테이너를 VSCode의 터미널로 사용중인데, `python manage.py runserver`로 장고를 실행하면 자기가 알아서 컨테이너의 포트 - 밖 운영체제의 포트로 매핑을 해 줌.
 - 문제는, __VSCode를 종료해도 이 포트 포워딩 설정을 유지하고 있다는 것__
     - 재시작하고 `python manage.py runserver` 명령어를 치면 포트가 점유되고 있다고 나옴
 - 옆 Remote Explorer에서 맨 밑 forwarded port에서 포트포워딩 제거하면 됨
+
+
+
+************************************
+
+### Tutorial 2 Requests and Responses
+
+#### Requet / Response object
+- `Django request` extends the regular `HttpRequest`
+    - `request.POST` : Only handles form data.  Only works for 'POST' method.
+    - `request.data` : Handles arbitrary data.  Works for 'POST', 'PUT' and 'PATCH' methods.
+
+#### Wrapping API views
+
+뷰의 구현
+- 함수기반 뷰 : `@api_view` decorator 사용
+- 클래스기반 뷰 : `APIView` 클래스 상속받아 구현
+- Django View에서는
+    1. view 함수 내에서 Request instances 를 받도록 보장해주며 
+    2. adding `context` to Response objects so that `content negotiation` can be performed.
+    3. 근데 임포트는 `from rest_framework.response import Response` 인데...? rest_framework는 다른 프레임워크 아닌가?
+
+#### 함수기반 뷰 (with decorator)
+ - 에전에 만들었던 `def snippet_list(request):` 위에 `@api_view(['GET', 'POST'])` decorator를 더함 (parameterized decorator? 기억이 잘안나네)
+ - response도 이전에는 지정해 줬었는데 (JsonResponse) context에 따라 알아서 처리해 주는 듯
+ - `status=201` 보다는 `status=status.HTTP_201_CREATED`
+ - view안에서 `serializer.save()`로 response data 를 채웠으면, 안에 json이 있음. 이 경우 django response는 JsonResponse를 지정해 줄 필요가 없음 (그냥 Response로 감싸서 return)
+
+#### format suffix 처리하기
+- endpoint 설정하는 곳(`urls.py`)에서 `urlpatterns = format_suffix_patterns(urlpatterns)` 추가
+- 함수기반 뷰의 파라미터에 format=None 추가, `def snippet_list(request, format=None):`
+
+이러면 request 전달 시 format suffix가 지정된 경우
+- ex)`http://127.0.0.1:8000/snippets.json` 나 `http://127.0.0.1:8000/snippets.api`
+- django (rest_framework?) __response는__ 상황에 맞는 type를 반환해 줌
+- `.api` : `Browsable API`?
+    - <a href="https://www.django-rest-framework.org/topics/browsable-api/" target="_blank">https://www.django-rest-framework.org/topics/browsable-api/</a>
+    - 일단 request에 대해, 특히 browser가 request한 경우 browsable한 html문서를 반환해 준다는 것 같음
+
+또는, accept header에 response type이 명시되어 있는 경우도 자동으로 처리 가능
+```
+http http://127.0.0.1:8000/snippets/ Accept:application/json  # Request JSON
+http http://127.0.0.1:8000/snippets/ Accept:text/html         # Request HTML
+```
