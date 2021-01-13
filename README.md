@@ -101,3 +101,74 @@ model과 serializer가 같은 필드에 대해 비슷한 선언 작업을 중복
 http http://127.0.0.1:8000/snippets/ Accept:application/json  # Request JSON
 http http://127.0.0.1:8000/snippets/ Accept:text/html         # Request HTML
 ```
+
+### 3 - Class based Views
+
+class based views helps us keep our code <a href="https://en.wikipedia.org/wiki/Don't_repeat_yourself" target="_blank">DRY.</a>
+
+```
+@api_view(['GET', 'POST'])
+def snippet_list(request, format=None):
+    if request.method == 'GET':
+        ...
+    if request.method == 'POST':
+        ...
+```
+
+를 아래와 같이 바꿀 수 있음
+
+```
+class SnippetList(APIView):
+    def get(self, request, format=None):
+        ...
+    def post(self, request, format=None):
+        ...
+```
+
+__url pattern__ 도 다음과 같이 바꿈
+
+```
+path('snippets/', views.snippet_list),
+```
+에서
+```
+urlpatterns = [
+    path('snippets/', views.SnippetList.as_view()),
+]
+```
+
+으로
+
+
+#### mixins
+view들의 get, post 등은 보통 하는 일이 엄청나게 다양하지는 않음 (ex - get은 보통 아이템 하나를 가져오거나 listing하는 경우가 많음).  
+이를 일일이 구현할 필요 없이 (MVC 구조여서 가능) 공통연산을 미리 mixins으로 구현해서 이를 다중상속받아 쓰면 편함
+
+```
+def get(self, request, format=None):
+    snippets = Snippet.objects.all()
+    serializer = SnippetSerializer(snippets, many=True)
+    return Response(serializer.data)
+```
+을
+
+
+```
+class SnippetDetail(mixins.RetrieveModelMixin,
+                    ...
+                    generics.GenericAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+```
+
+으로 바꿀 수 있음
+
+심지어 많은 view들이 (다른 model에 대해) 비슷한 일을 하기 때문에, 이를 `generics.SomeViewName`으로 상속받아 코드 길이를 더 줄일 수 있음
+
+```
+class SnippetList(generics.ListCreateAPIView):
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+```
