@@ -1,6 +1,7 @@
 # django_tutorial
 code of https://www.django-rest-framework.org/tutorial
 
+- codes (and aligned commits logs for comparing codes) are uploaded in <a href="https://github.com/nailbrainz/django_tutorial" target="_blank">https://github.com/nailbrainz/django_tutorial</a>
 
 # pythonenv
 in current local PC (nailbrainz-PC), restart the django container, and type
@@ -18,6 +19,9 @@ python manage.py runserver
 
 ### Tutorial 1 Serialization
 <a href="https://www.django-rest-framework.org/tutorial/1-serialization/" target="_blank">https://www.django-rest-framework.org/tutorial/1-serialization/<.a>
+
+github code
+- <a href="https://github.com/nailbrainz/django_tutorial/commit/c61471e0101b5a4e42680af30c7365c528e44415" target="_blank">change log - Serialization</a>
 
 - what happens when i type `python manage.py migrate`?
 - made a model
@@ -64,6 +68,8 @@ model과 serializer가 같은 필드에 대해 비슷한 선언 작업을 중복
 
 ### Tutorial 2 Requests and Responses
 
+- <a href="https://github.com/nailbrainz/django_tutorial/commit/c9d4da2e76903b90b073981b987004013be35cae" target="_blank">change log - Requests and Responses</a>
+
 #### Requet / Response object
 - `Django request` extends the regular `HttpRequest`
     - `request.POST` : Only handles form data.  Only works for 'POST' method.
@@ -103,6 +109,9 @@ http http://127.0.0.1:8000/snippets/ Accept:text/html         # Request HTML
 ```
 
 ### 3 - Class based Views
+
+- <a href="https://github.com/nailbrainz/django_tutorial/commit/b9604025f8103c95fd95e3ea8cb85e6557021574" target="_blank">change log 1 - mixins</a>
+- <a href="https://github.com/nailbrainz/django_tutorial/commit/d31d959feff6ef21d84d5f08e0b101fb574f04b2" target="_blank">change log 2 - generics</a>
 
 class based views helps us keep our code <a href="https://en.wikipedia.org/wiki/Don't_repeat_yourself" target="_blank">DRY.</a>
 
@@ -172,3 +181,44 @@ class SnippetList(generics.ListCreateAPIView):
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
 ```
+
+
+### Tutorial 4: Authentication & Permissions
+
+ - Code snippets are always associated with a creator.
+ - Only authenticated users may create snippets.
+ - Only the creator of a snippet may update or delete it.
+ - Unauthenticated requests should have full read-only access.
+
+
+`snippets` is a `reverse relationship` on the User model?
+
+`TODO:` add commit compare (with previous commit) link
+1. `Snippet` 모델에 owner, highlited 필드 추가
+    - `owner`필드는 `models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE)` 로 추가됨. `auth.User`는 뭐지?
+2. 다시 이 `Snippets` 모델에 `.save()` 함수 추가 : 저장할 때 highlight 해주는 역할 (pygment라이브러리 사용)
+3. 이전 디비 (sqlite) 삭제 및 초기화 
+4. `python manage.py createsuperuser` 로 Django superuser 만듬
+    - django user란 뭐지?
+5. user model을 위한 endpoint 추가
+    - serializer 추가
+    - 이 `user` 모델은 `snippet` 필드를 가지지만, 이 필드는 값을 갖지 않고 레퍼런스 (포린키) 만 가지므로, snippet field는 특별하게 선언해 줘야 함
+    - `snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())`
+6. 유저 모델 관련 뷰 추가
+7. 유저 모델 관련 url 추가
+
+이제부턴 snippet과 user간의 관계 정의 시작
+1. snippet 생성 시, 이 스니펫을 생성한 user는 json data 같은거에 포함되는 게 아니라, __incoming request의 property__ 로 온다고 함.
+    - 아래와 같은 함수를 `SnippetList` view에 추가해, create수행 중 자동으로 실행되게  
+      ```
+      def perform_create(self, serializer):
+      serializer.save(owner=self.request.user)
+      ```
+2. snippet serialization시 read only속성을 보유하기 위해 `owner = serializers.ReadOnlyField(source='owner.username')` 부분을 snippet serializer에 추가 (db에 속성으로 추가되는 듯?)
+3. 권한 추가
+    - view class에다가  
+      ```
+      permission_classes = [permissions.IsAuthenticatedOrReadOnly,
+                      IsOwnerOrReadOnly]
+      ```
+      같은 필드를 추가하면 유저에 따라 권한 관리를 해 줌. Permission은 custom implementation 가능 (snippers/permissions.py 참고)
