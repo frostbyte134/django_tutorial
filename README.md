@@ -269,7 +269,13 @@ snippet model의 serializer도 동일 시리얼라이저를 상속받음
 
 `snippetHighlight`란 뷰를 더하고, 렌더러를 staticHTMLRenderer로 만듬
 - `http://127.0.0.1:8000/snippets/1/highlight/`로 가보니 진짜 하이라이트 되네 ㄷㄷ;
-
+- ```
+  @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+    return Response(snippet.highlighted)
+  ```
+  이걸로 하이라이트 한듯. HTML/CSS가 반환되나?
 
 예전에 있던 url.py의 url들에게 name을 붙임
 - hyperLinkedSerialzer등에서 이름으로 각 필드에서 특정 endpoint (url) 로 링크를 걸 수 있는 듯
@@ -277,3 +283,33 @@ snippet model의 serializer도 동일 시리얼라이저를 상속받음
 
 pagenation을 더함
 
+### Chap 6. viewset
+- view-url간의 매칭을 convention에 의거해 자동적으로 해 준다고 함. 미리 정의된 뷰셋도 많은 듯
+- 이전에 만들었던 `UserList` + `UserDetail`뷰를 합쳐 `UserViewSet(viewsets.ReadOnlyModelViewSet)`로 만듬
+    - 둘 다 
+      ```
+      queryset = User.objects.all()
+      serializer_class = UserSerializer
+      ```
+      필드를 공유하고 있었음. 그러고보면 `queryset`은 db로부터 언제 값을 불러오지?
+- `SnippetList`, `SnippetDetail` and `SnippetHighlight` -> `SnippetViewSet(viewsets.ModelViewSet)`
+    - CRUD 이외의 연산을 추가하기 위해 `@action` 데코레이터를 사용
+      ```
+      @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+      def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
+      ```
+    - `@action`데코레이터로 추가된 액션은 보통 `GET`리퀘스트에 반응한다고 함. `POST`에 반응하게도 할 수 있는 듯
+
+
+이 후, 각 viewset으로부터 자동적으로 set of views를 만들고, url을 각자 연결해 줌
+- `router`를 사용하면 이 과정을 자동화할 수 있다고 함
+- `snippet_highlight` 용 endpoint는 어떻게 자동으로 만드는 거지???
+
+
+Trade-offs between views vs viewsets
+
+Using viewsets can be a really useful abstraction. It helps ensure that URL conventions will be consistent across your API, minimizes the amount of code you need to write, and allows you to concentrate on the interactions and representations your API provides rather than the specifics of the URL conf.
+
+That doesn't mean it's always the right approach to take. There's a similar set of trade-offs to consider as when using class-based views instead of function based views. Using viewsets is less explicit than building your views individually.
