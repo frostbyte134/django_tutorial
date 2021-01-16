@@ -313,3 +313,25 @@ Trade-offs between views vs viewsets
 Using viewsets can be a really useful abstraction. It helps ensure that URL conventions will be consistent across your API, minimizes the amount of code you need to write, and allows you to concentrate on the interactions and representations your API provides rather than the specifics of the URL conf.
 
 That doesn't mean it's always the right approach to take. There's a similar set of trade-offs to consider as when using class-based views instead of function based views. Using viewsets is less explicit than building your views individually.
+
+
+
+#### api-guide : Requests
+
+- parsing : `request.data`는  __request body__ 를 파싱한 결과를 반환함. standard `request.POST` 의 확장 (POST로 올려진 것 이외도 처리가능, ...)
+- `request.query_params` is a more correctly named synonym for `request.GET`.
+    - any HTTP method type may include query parameters, not just GET requests.
+
+`content negotiation`
+- 동일한 uri에서 다른 포멧의 결과를 반환하게?
+
+
+
+
+#### api-guide : Response
+> REST framework supports HTTP content negotiation by providing a Response class which allows you to return content that can be rendered into multiple content types, depending on the client request.
+
+버릴 부분이 없는 듯...?
+- The Response class subclasses Django's SimpleTemplateResponse. Response objects are initialised with data, which should consist of native Python primitives. REST framework then uses standard HTTP content negotiation to determine how it should render the final response content.
+- There's no requirement for you to use the Response class, you can also return regular HttpResponse or StreamingHttpResponse objects from your views if required. Using the Response class simply provides a nicer interface for returning content-negotiated Web API responses, that can be rendered to multiple formats.
+- Unless you want to heavily customize REST framework for some reason, you should always use an APIView class or @api_view function for views that return Response objects. Doing so ensures that the view can perform content negotiation and select the appropriate renderer for the response, before it is returned from the view.
