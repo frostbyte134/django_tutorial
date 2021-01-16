@@ -240,6 +240,8 @@ class SnippetList(generics.ListCreateAPIView):
 
 ### Tutorial 5: Relationships & Hyperlinked APIs
 
+<a href="https://github.com/nailbrainz/django_tutorial/commit/c93482c8e1c209c002cf038a5da75afac60c232d" target="_blank">commit change log</a>
+
 > At the moment relationships within our API are represented by using primary keys. In this part of the tutorial we'll improve the cohesion and discoverability of our API, by instead using hyperlinking for relationships.
 
 
@@ -284,6 +286,9 @@ snippet model의 serializer도 동일 시리얼라이저를 상속받음
 pagenation을 더함
 
 ### Chap 6. viewset
+
+<a href="https://github.com/nailbrainz/django_tutorial/commit/32f658ad8b436d4491658a7c5c0381dcc5389411" target="_blank">commit change log</a>
+
 - view-url간의 매칭을 convention에 의거해 자동적으로 해 준다고 함. 미리 정의된 뷰셋도 많은 듯
 - 이전에 만들었던 `UserList` + `UserDetail`뷰를 합쳐 `UserViewSet(viewsets.ReadOnlyModelViewSet)`로 만듬
     - 둘 다 
